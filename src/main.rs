@@ -1,6 +1,7 @@
 extern crate core;
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
+use std::rc::Rc;
 use crate::checked::{MathError, MathResult};
 
 // use core::num::fmt::Part::Copy;
@@ -303,6 +304,7 @@ fn main() {
     let _x = Box::new(0i32);
     // division_int(3, 0);
     println!("This point won't be reached");
+    //endregion
 
     //region 19.7.散列表HashMap
     println!("\n\n*****=====19.7.散列表HashMap=====*****");
@@ -316,9 +318,9 @@ fn main() {
     use std::collections::HashMap;
     fn call(number: &str) -> &str {
         match number {
-            "798-1364" => "We're sorry, the call cannot be completed\
+            "798-1364" => "We're sorry, the call cannot be completed \
             Please hang up and try again.",
-            "645-7689" => "Hello, this is Mr. Awesome's Pizza. My name\
+            "645-7689" => "Hello, this is Mr. Awesome's Pizza. My name \
             is Fred. What can I get for you today?",
             _ => "Hi, Who is this again?"
         }
@@ -335,26 +337,157 @@ fn main() {
         _ => println!("Don't have Daniel's number."),
     }
 
+    // 如果被插入的值为新内容，那么 `HashMap::insert()` 返回 `None` ，否则返回 `Some(value)`。
+    contacts.insert("Daniel", "164-6743");
+    match contacts.get(&"Ashley") {
+        Some(&number) => println!("Calling Ashley: {}", call(number)),
+        _ => println!("Don't have Ashley's number."),
+    }
+    contacts.remove(&"Ashley");
 
+    // `HashMap::iter() 返回一个迭代器，该迭代器以任意顺序举出 (&'a key, &'a value) 对。
+    for (contact, &number) in contacts.iter() {
+        println!("Calling {}({}): {}", contact, number, call(number));
+    }
+    //endregion
 
+    //region 19.7.1.更改或自定义关键字类型
+    println!("\n\n*****=====19.7.1.更改或自定义关键字类型=====*****");
+    // 任何实现了 Eq 和 Hash trait 的类型都可以充当 HashMap 的键，这包括：
+    //      bool：当然这个用处不大，只能是两个可能的键
+    //      int,unit，以及其它整数类型
+    //      String 和 &str：如果使用 String 作为键来创建 HashMap,则可以将 &str 作为散列表
+    //      的 .get() 方法的参数，以获取值。
+    // 注意：
+    // f32 和 f64 没有实现 Hash，这很大程度上是由于若使用浮点数作为散列表的键，浮点精度误差会容易导致错误
+    // 对所有的集合类(collection class)，如果它们包含的类型都分别实现了 Eq 和 Hash,那么这些
+    // 集合类也就实现了 Eq 和 Hash。
+    // 比如：若 T 实现了 Hash，则 Vec<T> 也实现了 Hash。
+    // 对自定义类型可以轻松地实现 Eq 和 Hash，只需加上一行代码：#[derive(PartialEq, Eq, Hash)]
+    // 来试一个非常简易的用户登录系统
+    // 前面已经定义过了！！！ 2023年2月5日16时18分35秒
+    // use std::collections::HashMap;
+    #[derive(PartialEq, Eq, Hash)]
+    struct Account<'a> {
+        username: &'a str,
+        password: &'a str,
+    }
+    struct AccountInfo<'a> {
+        name: &'a str,
+        email: &'a str,
+    }
+    type Accounts<'a> = HashMap<Account<'a>, AccountInfo<'a>>;
+    fn try_logon<'a>(accounts: &Accounts<'a>, username: &'a str, password: &'a str) {
+        println!("Username: {}", username);
+        println!("Password: {}", password);
+        println!("Attempting to login...");
 
+        let logon = Account {
+            username: username,
+            password: password,
+        };
+        match accounts.get(&logon) {
+            Some(account_info) => {
+                println!("Successfully logon!");
+                println!("\tName: {}", account_info.name);
+                println!("\tEmail: {}",account_info.email);
+            },
+            _ => println!("Login failed!"),
+        }
+    }
 
+    let mut accounts: Accounts = HashMap::new();
+    let account = Account {
+        username: "j.everyman",
+        password: "password123",
+    };
 
+    let account_info = AccountInfo {
+        name: "John Everyman",
+        email: "j.everyman@gmail.com",
+    };
+    accounts.insert(account, account_info);
+    try_logon(&accounts, "j.everyman", "password123");
+    try_logon(&accounts, "j.everyman", "password23");
+    //endregion
 
+    //region 19.7.2.散列集HashSet
+    println!("\n\n*****=====19.7.2.散列集HashSet=====*****");
+    // HushSet ： 只关心其中的键而非值（事实上 HashSet<T>只是对HashMap<T,()>的封装）。
+    // 其独特之处在于：保证了不会出现重复的元素，这是任何set集合类型遵循地规定
+    // 如果插入的值已经存在（新值==已存在的值，且拥有相同的散列值），那么新值会替换旧值。
+    // 如果你不想要一样东西出现多于一次，或者要判断一样东西是不是已经存在，很有用。
+    // 集合有4种基本操作（下面的调用全部都返回一个迭代器）：
+    //      union(并集)：获得两个集合中的元素（不含重复值）
+    //      difference(差集)：获取属于第一个集合，但不属于第二个集合的所有元素
+    //      intersection(交集)：获取同时属于两个集合的所有元素。
+    //      symmetric_difference(对称差)：获取所有只属于其中一个集合，而不同时属于两个集合的所有元素
+    use std::collections::HashSet;
+    let mut a: HashSet<i32> = vec!(1i32, 2, 3).into_iter().collect();
+    let mut b: HashSet<i32> = vec!(2i32, 3, 4).into_iter().collect();
+    assert!(a.insert(4));
+    assert!(a.contains(&4));
 
+    // 如果值已经存在，那么 `HashSet::insert()` 返回 false。
+    // 引发 panic!
+    // assert!(b.insert(4), "Value 4 is already in set B!");
+    b.insert(5);
+    // 若一个集合(collection) 的元素类型实现了 `Debug`，那么该集合也就实现了 `Debug`。
+    println!("A: {:?}", a);
+    println!("B: {:?}", b);
 
+    // 乱序打印
+    println!("Union: {:?}", a.union(&b).collect::<Vec<&i32>>());
+    println!("Difference: {:?}", a.difference(&b).collect::<Vec<&i32>>());
+    println!("Intersection: {:?}", a.intersection(&b).collect::<Vec<&i32>>());
+    println!("Symmetric Difference: {:?}", a.symmetric_difference(&b).collect::<Vec<&i32>>());
+    //endregion
 
+    //region 19.8.引用计数Rc
+    println!("\n\n*****=====19.8.引用计数Rc=====*****");
+    // 当需要多个所有权时，可以使用 Rc（引用计数，Reference Counting）
+    // Rc 跟踪引用的数量，相当于在 Rc 值的所有者的数量。
+    // 每当克隆一个 Rc 时，Rc的引用计数就会加1 ，而每当克隆的 Rc 退出作用域时，引用计数就会减少1
+    // 当 Rc 的引用计数变为 0 时，意味着已经没有所有者， Rc 和值两者都将被删除
+    // 克隆 Rc 从不执行深拷贝，只创建另一个指向包裹值的指针，并增加计数。
+    use std::rc::Rc;
+    let rc_examples = "Rc examples".to_string();
+    {
+        println!("--- rc_a is created ---");
+        let rc_a: Rc<String> = Rc::new(rc_examples);
+        println!("Reference count of rc_a: {}", Rc::strong_count(&rc_a));
+        {
+            println!("--- rc_a is cloned to rc_b ---");
+            let rc_b: Rc<String> = Rc::clone(&rc_a);
+            println!("Reference count of rc_b: {}", Rc::strong_count(&rc_b));
+            println!("Reference count of rc_a: {}", Rc::strong_count(&rc_a));
+            // 如果两者内部的值相等的话，则两个 `Rc` 相等。
+            println!("rc_a and rc_b are equal: {}", rc_a.eq(&rc_b));
+            // 直接使用值的方法
+            println!("Length of the value inside rc_a: {}", rc_a.len());
+            println!("Value of rc_b: {}", rc_b);
+            println!("--- rc_b is dropped out of scope ---");
+        }
+        println!("Reference Count of rc_a: {}", Rc::strong_count(&rc_a));
+        println!("--- rc_a is dropped out of scope ---");
+    }
+    //endregion
 
-
-
-
-
-
-
-
-
-
-
+    //region 19.9.共享引用计数Arc
+    println!("\n\n*****=====19.9.共享引用计数Arc=====*****");
+    // 当线程之间所有权需要共享时，可以使用 Arc （共享引用计数，Atomic Referece Counted）
+    // 其通过 Clone 可以为内存堆中的值的位置创建一个引用指针，同时增加引用计数器
+    // 由于它在线程之间共享所有权，因此当指向某个值的最后一个引用指针退出作用域时，该变量将被删除。
+    use std::sync::Arc;
+    use std::thread;
+    let apple = Arc::new("the same apple");
+    for _ in 0..10 {
+        let apple = Arc::clone(&apple);
+        thread::spawn(move || {
+            println!("{:?}", apple);
+        });
+    }
+    //endregion
 }
 mod checked {
     #[derive(Debug)]
