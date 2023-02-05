@@ -1,5 +1,6 @@
 extern crate core;
 
+use std::collections::HashMap;
 use crate::checked::{MathError, MathResult};
 
 // use core::num::fmt::Part::Copy;
@@ -306,9 +307,33 @@ fn main() {
     //region 19.7.散列表HashMap
     println!("\n\n*****=====19.7.散列表HashMap=====*****");
     // vector 通过整形下标来存储值，而 HasMap（散列表）通过键（key）来存储值。
-    // HashMap 的键可以是布尔型、整形、字符串，或任意实现了
+    // HashMap 的键可以是布尔型、整形、字符串，或任意实现了 Eq 和 Hask trait
+    // 的其他类型。
+    // 和 vector 类似，HashMap 也是可增长的，但 HashMap 在占据了多余空间时还
+    // 可以缩小自己。可以使用 HashMap::with_capacity(unit) 创建具有一定初始
+    // 容量的 HashMap，也可以使用 HashMap::new() 来获得一个带有默认初始容量的
+    // HashMap。
+    use std::collections::HashMap;
+    fn call(number: &str) -> &str {
+        match number {
+            "798-1364" => "We're sorry, the call cannot be completed\
+            Please hang up and try again.",
+            "645-7689" => "Hello, this is Mr. Awesome's Pizza. My name\
+            is Fred. What can I get for you today?",
+            _ => "Hi, Who is this again?"
+        }
+    }
+    let mut contacts = HashMap::new();
+    contacts.insert("Daniel", "798-1364");
+    contacts.insert("Ashley", "645-7689");
+    contacts.insert("Katie", "435-8291");
+    contacts.insert("Robert", "956-1745");
 
-
+    // 接受一个引用并返回 Option<&V>
+    match contacts.get(&"Daniel") {
+        Some(&number) => println!("Calling Daniel: {}", call(number)),
+        _ => println!("Don't have Daniel's number."),
+    }
 
 
 
